@@ -11,6 +11,7 @@ import (
 
 	"github.com/remotehack/bottle/pkg/config"
 	"github.com/remotehack/bottle/pkg/persister"
+	"github.com/remotehack/bottle/pkg/serializer"
 )
 
 const (
@@ -69,7 +70,15 @@ func (s *Server) Serve(ctx context.Context) {
 
 func (s *Server) writeRequest() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		err := s.persister.Write("filename", "data")
+		fn, err := s.getFilename(r)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = fmt.Fprintf(w, "server.writeRequest: %s", err)
+
+			return
+		}
+
+		err = s.persister.Write(fn, serializer.Serialize(fmt.Sprintf("%#v", r.Header)))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = fmt.Fprintf(w, "writing file failed: %s", err)

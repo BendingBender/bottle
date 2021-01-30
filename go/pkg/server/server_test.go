@@ -21,6 +21,7 @@ func TestServer_getFilename(t *testing.T) {
 		r   *http.Request
 		cfg config.Config
 	}
+
 	tests := []struct {
 		name    string
 		args    args
