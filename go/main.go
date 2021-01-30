@@ -18,7 +18,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	p := persister.NewFilePersister(".")
+	p := persister.NewFilePersister("../data")
 
 	srv, err := server.New(cfg, p)
 	if err != nil {

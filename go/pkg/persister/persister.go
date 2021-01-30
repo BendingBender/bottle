@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 // Persister interface has a Write func that takes domain and data and returns an error if writing fails.
@@ -21,8 +22,13 @@ type FilePersister struct {
 }
 
 func (f FilePersister) Write(fileName, data string) error {
+	absPath, err := filepath.Abs(fmt.Sprintf("%s%s%s", f.directory, string(os.PathSeparator), fileName))
+	if err != nil {
+		return fmt.Errorf("figuring out absolute path failed: %w", err)
+	}
+
 	file, err := os.OpenFile(
-		fmt.Sprintf("%s%s%s", f.directory, string(os.PathSeparator), fileName),
+		absPath,
 		os.O_APPEND|os.O_WRONLY|os.O_CREATE,
 		0o644,
 	)
