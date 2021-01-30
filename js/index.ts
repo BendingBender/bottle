@@ -4,7 +4,9 @@ import express from 'express';
 
 const app = express();
 
-app.get('/', (req, res) => {res.send("hello")})
+app.get('/', (req, res) => {res.send("hello from node!")})
 
 
-app.listen(8000);
+app.listen(8000, () => {
+    console.log("started")
+});
