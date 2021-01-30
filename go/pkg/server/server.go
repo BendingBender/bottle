@@ -78,7 +78,7 @@ func (s *Server) writeRequest() http.HandlerFunc {
 			return
 		}
 
-		err = s.persister.Write(fn, serializer.Serialize(fmt.Sprintf("%#v", r.Header)))
+		content, err := s.persister.Write(fn, serializer.Serialize(fmt.Sprintf("%#v", r.Header)))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = fmt.Fprintf(w, "writing file failed: %s", err)
@@ -86,17 +86,13 @@ func (s *Server) writeRequest() http.HandlerFunc {
 			return
 		}
 
-		w.WriteHeader(http.StatusOK)
+		_, _ = fmt.Fprint(w, content)
 	}
 }
 
 func (s *Server) getFilename(r *http.Request) (string, error) {
-	fmt.Printf("request url: %s\nconfigured url: %s\n\n", r.URL.Host, s.config.Host)
-	fmt.Printf("whole %#v\n", r.URL)
-	fmt.Printf("whole request: %#v\n", r)
-
-	if strings.HasSuffix(r.URL.Host, s.config.Host) {
-		h := strings.TrimRight(r.URL.Host, s.config.Host)
+	if strings.HasSuffix(r.Host, s.config.Host) {
+		h := strings.TrimRight(r.Host, s.config.Host)
 		if h == "" {
 			return "", errors.New("server.getFileName there was no subdomain")
 		}

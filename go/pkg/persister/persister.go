@@ -2,14 +2,14 @@ package persister
 
 import (
 	"fmt"
-	"log"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 )
 
 // Persister interface has a Write func that takes domain and data and returns an error if writing fails.
 type Persister interface {
-	Write(string, string) error
+	Write(string, string) (string, error)
 }
 
 // NewFilePersister returns a new file persister that writes data to files into specified directory.
@@ -21,10 +21,10 @@ type FilePersister struct {
 	directory string
 }
 
-func (f FilePersister) Write(fileName, data string) error {
+func (f FilePersister) Write(fileName, data string) (string, error) {
 	absPath, err := filepath.Abs(fmt.Sprintf("%s%s%s", f.directory, string(os.PathSeparator), fileName))
 	if err != nil {
-		return fmt.Errorf("figuring out absolute path failed: %w", err)
+		return "", fmt.Errorf("figuring out absolute path failed: %w", err)
 	}
 
 	file, err := os.OpenFile(
@@ -33,18 +33,19 @@ func (f FilePersister) Write(fileName, data string) error {
 		0o644,
 	)
 	if err != nil {
-		return fmt.Errorf("persister.FilePersister.Write os.OpenFile: %w", err)
+		return "", fmt.Errorf("persister.FilePersister.Write os.OpenFile: %w", err)
 	}
-
-	defer func() {
-		if fErr := file.Close(); fErr != nil {
-			log.Fatalf("persister.FilePersister.Write file.Close: %s", fErr)
-		}
-	}()
 
 	if _, err = file.Write([]byte(data)); err != nil {
-		return fmt.Errorf("persister.FilePersister.Write file.Write: %w", err)
+		return "", fmt.Errorf("persister.FilePersister.Write file.Write: %w", err)
 	}
 
-	return nil
+	_ = file.Close()
+
+	content, err := ioutil.ReadFile(absPath)
+	if err != nil {
+		return "", fmt.Errorf("could not read file contents: %w", err)
+	}
+
+	return string(content), nil
 }
