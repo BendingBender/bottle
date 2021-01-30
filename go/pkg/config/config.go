@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"log"
+	"os"
 
 	"github.com/spf13/viper"
 )
@@ -19,7 +21,13 @@ type validateFunc func(string) error
 
 // Get returns a configuration struct, or error if it can't.
 func Get() (Config, error) {
+	viper.SetConfigFile(".env")
 	viper.AutomaticEnv()
+	err := viper.ReadInConfig()
+	if err != nil {
+		log.Fatalf("reading config failed: %s", err)
+		os.Exit(1)
+	}
 
 	validations := map[string]validateFunc{
 		"PORT": isPort,

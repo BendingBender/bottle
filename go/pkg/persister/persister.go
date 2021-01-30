@@ -23,7 +23,7 @@ type FilePersister struct {
 func (f FilePersister) Write(fileName, data string) error {
 	file, err := os.OpenFile(
 		fmt.Sprintf("%s%s%s", f.directory, string(os.PathSeparator), fileName),
-		os.O_APPEND|os.O_WRONLY,
+		os.O_APPEND|os.O_WRONLY|os.O_CREATE,
 		0o644,
 	)
 	if err != nil {

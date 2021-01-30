@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/remotehack/bottle/pkg/config"
@@ -21,15 +20,13 @@ type Server struct {
 	router    *http.ServeMux
 	config    config.Config
 	persister persister.Persister
-	kill      chan os.Signal
 }
 
-func New(cfg config.Config, persister persister.Persister, kill chan os.Signal) (Server, error) {
+func New(cfg config.Config, persister persister.Persister) (Server, error) {
 	return Server{
 		router:    http.NewServeMux(),
 		persister: persister,
 		config:    cfg,
-		kill:      kill,
 	}, nil
 }
 
@@ -37,7 +34,7 @@ func (s *Server) Routes() {
 	s.router.HandleFunc("/", s.writeRequest())
 }
 
-func (s *Server) Serve() {
+func (s *Server) Serve(ctx context.Context) {
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%s", s.config.Port),
 		Handler:           s.router,
@@ -54,7 +51,7 @@ func (s *Server) Serve() {
 
 	log.Println("server started")
 
-	<-s.kill
+	<-ctx.Done()
 
 	log.Println("kill signal received")
 
@@ -70,5 +67,14 @@ func (s *Server) Serve() {
 
 func (s *Server) writeRequest() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		err := s.persister.Write("filename", "data")
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = fmt.Fprintf(w, "writing file failed: %s", err)
+
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
 	}
 }
