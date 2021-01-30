@@ -8,7 +8,6 @@ export class NoSuchSubdomainError extends Error {
   constructor ({ subdomain }: { subdomain : string }) {
     super(`No such domain ${subdomain}`);
     this.subdomain = subdomain;
-    //Error.captureStackTrace(this, NoSuchSubdomainError);
   }
 }
 
@@ -18,7 +17,7 @@ export class NoSuchSubdomainError extends Error {
 export class RequestsStore {
   private storeDir: string;
 
-  constructor({ storeDir = "data" } : { storeDir?: string } = {}) {
+  constructor({ storeDir } : { storeDir: string }) {
     this.storeDir = storeDir;
   }
 
