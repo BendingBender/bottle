@@ -93,6 +93,7 @@ func (s *Server) writeRequest() http.HandlerFunc {
 func (s *Server) getFilename(r *http.Request) (string, error) {
 	fmt.Printf("request url: %s\nconfigured url: %s\n\n", r.URL.Host, s.config.Host)
 	fmt.Printf("whole %#v\n", r.URL)
+	fmt.Printf("whole request: %#v\n", r)
 
 	if strings.HasSuffix(r.URL.Host, s.config.Host) {
 		h := strings.TrimRight(r.URL.Host, s.config.Host)
