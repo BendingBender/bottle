@@ -2,9 +2,11 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/remotehack/bottle/pkg/config"
@@ -77,4 +79,17 @@ func (s *Server) writeRequest() http.HandlerFunc {
 
 		w.WriteHeader(http.StatusOK)
 	}
+}
+
+func (s *Server) getFilename(r *http.Request) (string, error) {
+	if strings.HasSuffix(r.URL.Host, s.config.Host) {
+		h := strings.TrimRight(r.URL.Host, s.config.Host)
+		if h == "" {
+			return "", errors.New("server.getFileName there was no subdomain")
+		}
+
+		return h, nil
+	}
+
+	return "development", nil
 }

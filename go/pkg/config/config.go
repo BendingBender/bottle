@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -9,12 +10,15 @@ import (
 )
 
 const (
+	keyPort = "PORT"
+	keyHost = "HOST"
 	portMin = 1024
 	portMax = 65535
 )
 
 type Config struct {
 	Port string
+	Host string
 }
 
 type validateFunc func(string) error
@@ -23,6 +27,7 @@ type validateFunc func(string) error
 func Get() (Config, error) {
 	viper.SetConfigFile(".env")
 	viper.AutomaticEnv()
+
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.Fatalf("reading config failed: %s", err)
@@ -30,7 +35,8 @@ func Get() (Config, error) {
 	}
 
 	validations := map[string]validateFunc{
-		"PORT": isPort,
+		keyPort: isPort,
+		keyHost: isNotEmpty,
 	}
 
 	for k, v := range validations {
@@ -40,7 +46,8 @@ func Get() (Config, error) {
 	}
 
 	return Config{
-		Port: viper.GetString("PORT"),
+		Port: viper.GetString(keyPort),
+		Host: viper.GetString(keyHost),
 	}, nil
 }
 
@@ -48,6 +55,15 @@ func isPort(key string) error {
 	n := viper.GetInt(key)
 	if n < portMin || n > portMax {
 		return fmt.Errorf("configured port is not in permissible range of %d - %d, got %d", portMin, portMax, n)
+	}
+
+	return nil
+}
+
+func isNotEmpty(key string) error {
+	h := viper.GetString(key)
+	if h == "" {
+		return errors.New("configured host is empty")
 	}
 
 	return nil
