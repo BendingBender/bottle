@@ -1,21 +1,21 @@
 import { promises as fs, constants } from 'fs';
 import { EOL } from 'os';
 
-class NoSuchSubdomain extends Error {
+export class NoSuchSubdomainError extends Error {
 
   public subdomain: string;
 
   constructor ({ subdomain }: { subdomain : string }) {
     super(`No such domain ${subdomain}`);
     this.subdomain = subdomain;
-    Error.captureStackTrace(this, NoSuchSubdomain);
+    //Error.captureStackTrace(this, NoSuchSubdomainError);
   }
 }
 
 /**
  * @class RequestsStore Stores and reads requests for a domain.
  */
-class RequestsStore {
+export class RequestsStore {
   private storeDir: string;
 
   constructor({ storeDir = "data" } : { storeDir?: string } = {}) {
@@ -23,7 +23,11 @@ class RequestsStore {
   }
 
   async createStore({ subdomain } : { subdomain : string }) {
+
+    await fs.mkdir(this.storeDir, { recursive: true });
+
     const fileName = this.getFileNameFromSubdomain(subdomain);
+    await fs.writeFile(fileName, '', 'utf-8');
   }
 
   async write({ subdomain, timestamp, content } : { subdomain : string, timestamp : string, content : string }): Promise<void> {
@@ -34,16 +38,16 @@ class RequestsStore {
     let file = undefined;
 
     try {
-      file = await fs.open(fileName, constants.O_APPEND);
+      file = await fs.open(fileName, constants.O_WRONLY | constants.O_APPEND);
       await file.write(toAppend, 0, 'utf-8');
     } catch (e) {
       if (e.code === 'ENOENT') {
-        throw new NoSuchSubdomain({ subdomain });
+        throw new NoSuchSubdomainError({ subdomain });
       } else {
         throw e;
       }
     } finally {
-      file?.close();
+      await file?.close();
     }
 
   }
@@ -58,8 +62,3 @@ class RequestsStore {
     return `${this.storeDir}/${subdomain}`;
   }
 }
-
-export {
-  RequestsStore,
-  NoSuchSubdomain
-};
