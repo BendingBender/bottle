@@ -28,6 +28,9 @@ func Get() (Config, error) {
 	viper.SetConfigFile(".env")
 	viper.AutomaticEnv()
 
+	viper.SetDefault(keyPort, "7889")
+	viper.SetDefault(keyHost, "go.bottle.remotehack.space")
+
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.Fatalf("reading config failed: %s", err)
