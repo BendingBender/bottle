@@ -33,8 +33,27 @@ describe('RequestsStore', function() {
     await fs.rmdir(dir!, { recursive: true });
   });
 
+  describe('#exists()', function() {
+    it("returns false if the subdomain doesn't exist", async function() {
+
+      await expect(store!.exists({
+          subdomain
+      })).to.eventually.be.false;
+
+    });
+    it("returns true if the subdomain exists", async function() {
+
+      await store!.createStore({ subdomain });
+
+      await expect(store!.exists({
+          subdomain
+      })).to.eventually.be.true;
+
+    });
+  })
+
   describe('#write()', function() {
-    it("write doesn't work if subdomain not yet created", async function() {
+    it("throws NoSuchSubdomainError if subdomain not yet created", async function() {
 
       await expect(store!.write({
           subdomain: subdomain,
@@ -43,7 +62,7 @@ describe('RequestsStore', function() {
       })).to.be.rejectedWith(NoSuchSubdomainError);
 
     });
-    it("write works if subdomain not yet created", async function() {
+    it("doesn't throw exception if subdomain not yet created", async function() {
 
       await store!.createStore({ subdomain });
 
@@ -54,7 +73,7 @@ describe('RequestsStore', function() {
       })).to.not.be.rejected;
 
     });
-    it("write puts out the correct content", async function() {
+    it("creates the correct content", async function() {
 
       await store!.createStore({ subdomain });
 

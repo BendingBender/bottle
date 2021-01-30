@@ -1,6 +1,10 @@
 import { promises as fs, constants } from 'fs';
 import { EOL } from 'os';
 
+/**
+ * @class NoSuchSubdomainError is thrown when you try to write a request
+ * to an empty subdomain.
+ */
 export class NoSuchSubdomainError extends Error {
 
   public subdomain: string;
@@ -12,7 +16,7 @@ export class NoSuchSubdomainError extends Error {
 }
 
 /**
- * @class RequestsStore Stores and reads requests for a domain.
+ * @class RequestsStore stores and reads requests for a domain.
  */
 export class RequestsStore {
   private storeDir: string;
@@ -22,11 +26,18 @@ export class RequestsStore {
   }
 
   async createStore({ subdomain } : { subdomain : string }) {
-
-    await fs.mkdir(this.storeDir, { recursive: true });
-
     const fileName = this.getFileNameFromSubdomain(subdomain);
     await fs.writeFile(fileName, '', 'utf-8');
+  }
+
+  async exists({ subdomain } : { subdomain : string }): Promise<boolean> {
+    try {
+      const fileName = this.getFileNameFromSubdomain(subdomain);
+      await fs.access(fileName, constants.F_OK);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async write({ subdomain, timestamp, content } : { subdomain : string, timestamp : string, content : string }): Promise<void> {
