@@ -103,6 +103,8 @@ dist
 # TernJS port file
 .tern-port
 
+# VSCode settings
+.vscode
 
 /data/*
 !/data/.gitkeep

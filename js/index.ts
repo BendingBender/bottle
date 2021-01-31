@@ -7,6 +7,8 @@ import { valid } from './util';
 
 const app = express();
 
+const PORT = 8000;
+
 const ROOT = 'js.bottle.remotehack.space';
 
 const SUBREG = /^(?<subdomain>\w[\w-]*)\.js\.bottle\.remotehack\.space$/;
@@ -19,67 +21,62 @@ app.all('/', urlencodedParser, async (req, res, next) => {
 
     const {host} = req.headers;
 
-    if(host === ROOT) {
-        // 
-        if(req.method === 'GET') {
-            res.sendFile(join(__dirname, '/../www/landing.html'))
-            return;
-        }
-
-        if(req.method === 'POST') {
-
-            const {subdomain} = req.body
-
-            if(valid(subdomain)) {
-                if(await store.exists({subdomain})) {
-
-                    res.redirect(subdomain + ROOT)
-    
-                    return;
-                } else {
-
-                    await store.createStore({subdomain})
-
-                    res.send(`CREATED SUBDOMAIN: ${req.body.subdomain}`)
-                    return;
-                }
-            }
-
-
-            return;
-        }
-
+    if (host !== ROOT) {
+        next();
+        return;
     }
 
-    next();
+    if(req.method === 'GET') {
+        res.sendFile(join(__dirname, '/../www/landing.html'))
+        return;
+    }
 
+    if (req.method === 'POST') {
+
+        const {subdomain} = req.body
+
+        if (valid(subdomain)) {
+            if (!await store.exists({subdomain})) {
+                await store.createStore({subdomain})
+            }
+
+            res.redirect(`http://${subdomain}.${ROOT}`)
+        } else {
+            res.status(404).send(`${subdomain} is not a valid subdomain name!`);
+        }
+
+        return;
+    }
 })
 
 app.all('*', async (req, res) => {
     const {host} = req.headers;
 
-    const match =host?.match(SUBREG);
-    if(match) {
+    const match = host?.match(SUBREG);
+    const {subdomain} = match?.groups || {};
 
-        const {subdomain} = (match.groups as any)
+    if (!match || !subdomain) {
+        const msg = `Failed to match for subdomain on host ${host}`;
+        console.error(msg);
+        res.status(404).send(msg);
+        return;
+    }
 
-
-        const timestamp = Date.now().toString();
-        const content = JSON.stringify([req.headers, req.url])
-
+    const timestamp = Date.now().toString();
+    const content = JSON.stringify([req.headers, req.url])
+    try {
         await store.write({subdomain, timestamp, content})
 
         const result = await store.read({subdomain});
 
         res.contentType('text/plain');
         res.send(result);
-
-        return;
+    } catch (e) {
+        console.error(e);
+        res.status(404).send(`Nobody has created this domain yet.`);
     }
-
-    res.send(`(NODE) Cool `)
 })
 
-app.listen(8000, () => {
-    console.log("started")
+app.listen(PORT, () => {
+    console.log(`started on port ${PORT}`);
 });
